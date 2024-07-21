@@ -31,6 +31,16 @@ const float yawDriftThreshold = 0.5; // Threshold untuk drift yaw
 float initialRoll = 0, initialPitch = 0, initialYaw = 0;
 bool initialYawSet = false; // Flag untuk menyimpan nilai yaw awal
 
+// GPS data averaging
+const int numReadings = 10;
+float latitudeReadings[numReadings];
+float longitudeReadings[numReadings];
+int readIndex = 0;
+float totalLat = 0;
+float totalLng = 0;
+float averagedLat = 0;
+float averagedLng = 0;
+
 void setup() {
   Serial.begin(9600); // Menginisialisasi komunikasi serial dengan baud rate 9600
   ss.begin(GPSBaud);  // Menginisialisasi komunikasi serial dengan modul GPS
@@ -69,6 +79,12 @@ void setup() {
   initialPitch = atan2(-filtered_ax, sqrt(filtered_ay * filtered_ay + filtered_az * filtered_az)) * 180 / PI; // Menghitung pitch awal
   initialYaw = 0;  // Asumsi yaw awal adalah 0
   initialYawSet = true; // Mengaktifkan flag nilai yaw awal
+
+  // Initialize GPS data averaging
+  for (int i = 0; i < numReadings; i++) {
+    latitudeReadings[i] = 0;
+    longitudeReadings[i] = 0;
+  }
 }
 
 void loop() {
@@ -83,13 +99,24 @@ void loop() {
     float latitude = gps.location.lat();
     float longitude = gps.location.lng();
 
+    // Update GPS data averaging
+    totalLat -= latitudeReadings[readIndex];
+    totalLng -= longitudeReadings[readIndex];
+    latitudeReadings[readIndex] = latitude;
+    longitudeReadings[readIndex] = longitude;
+    totalLat += latitude;
+    totalLng += longitude;
+    readIndex = (readIndex + 1) % numReadings;
+    averagedLat = totalLat / numReadings;
+    averagedLng = totalLng / numReadings;
+
     // Membaca data MPU6050
     bacaMPU6050();
 
     // Menyiapkan data JSON
     StaticJsonDocument<100> doc;
-    doc["latitude"] = latitude;
-    doc["longitude"] = longitude;
+    doc["latitude"] = averagedLat;
+    doc["longitude"] = averagedLng;
     doc["roll"] = data.Roll;
     doc["pitch"] = data.Pitch;
     doc["yaw"] = data.Yaw;
