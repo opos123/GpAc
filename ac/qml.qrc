@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>compas1.png</file>
+        <file>main.qml</file>
+        <file>placeholder.png</file>
+        <file>pesawat.png</file>
+        <file>z.png</file>
+        <file>z1.png</file>
+        <file>pgs_biru.png</file>
+        <file>z2.png</file>
+    </qresource>
+</RCC>
